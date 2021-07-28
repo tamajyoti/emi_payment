@@ -1,0 +1,26 @@
+,,,
+,Credit default classification,,
+,,,
+,,,
+,variable_name,description,Details 
+,ID,Customer Id,
+,CREDIT,Credit amount given to the customer,
+,GENDER,Gender,
+,EDUCATION,Education,
+,MARRIAGE,Marital Status,
+,AGE,Age of the customer,
+,PAY_FEB,Payment history for the last 3 months,"-1 = Paid on time
+1 = Delayed by 1 month
+2 = Delayed by 2 months
+...
+5 = Delayed by 5 months
+6 = Delayed by 6 months or more"
+,PAY_JAN,,
+,PAY_DEC,,
+,BILL_AMT_FEB,Bill statements for the last 3 months,
+,BILL_AMT_JAN,,
+,BILL_AMT_DEC,,
+,PAY_AMT_FEB,Actual amount paid by the customer in the last 3 months,
+,PAY_AMT_JAN,,
+,PAY_AMT_DEC,,
+,DEFAULT_MAR,If the customer defaults in March,Binary output 0/1

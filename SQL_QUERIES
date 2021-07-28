@@ -1,0 +1,86 @@
+The major assumption is we are writing the SQL queries on postgres
+
+1. What is the most popular item that users order on their third purchase? If any.
+
+select item_name,COUNT(*) item_3_count from
+(select "user id",T."item id","item"."Item Name" item_name from
+(select t1.*,ROW_NUMBER() OVER (PARTITION BY "user id" ORDER BY "purchase time") AS RANK
+     from transaction t1
+ ) T 
+ inner join item on T."item id"=item."item id" where T.RANK=3
+ )T1 GROUP BY item_name order by item_3_count desc
+
+Approach: We select the 3rd item ordered by users and then count the number of each items and sort it by descending order.
+The first row gives the most ordered/popular 3rd purchase item
+
+2. How long is the shortest interval (in minute) the store has gone without purchase
+and refund?
+** In case we want it in minutes and seconds:
+
+		SELECT 
+		    txn_time,
+		    txn_time-(select txn_time from (
+		select TO_TIMESTAMP("Refund Time", 'MM/DD/YYYY HH24:MI:SS') txn_time from transaction where "Refund Time" is not null
+		union
+		select t1."Purchase time" from transaction t1
+		order by txn_time desc)y
+		              where y.txn_time<x.txn_time
+		              order by y.txn_time desc LIMIT 1) as time_diff
+
+		    from
+		(
+		select TO_TIMESTAMP("Refund Time", 'MM/DD/YYYY HH24:MI:SS') txn_time from transaction where "Refund Time" is not null
+		union
+		select t1."Purchase time" from transaction t1
+		order by txn_time desc
+		  )x
+		  group by txn_time
+		  order by time_diff
+
+** In case we want it exactly in minutes:
+
+		SELECT txn_time, extract(epoch from (txn_time - (select txn_time from (
+		select TO_TIMESTAMP("Refund Time", 'MM/DD/YYYY HH24:MI:SS') txn_time from Table1 where "Refund Time" is not null
+		union
+		select t1."Purchase time" from Table1 t1
+		order by txn_time desc)y
+		              where y.txn_time<x.txn_time
+		              order by y.txn_time desc LIMIT 1)))::float/60 as time_diff
+
+		    from
+		(
+		select TO_TIMESTAMP("Refund Time", 'MM/DD/YYYY HH24:MI:SS') txn_time from Table1 where "Refund Time" is not null
+		union
+		select t1."Purchase time" from Table1 t1
+		order by txn_time desc
+		  )x
+		  group by txn_time
+		  order by time_diff
+
+Approach: Format all time data into a datetime format and then sort them by increasing order. Then subtract every row from its previous one and then sort the time difference
+The lowest value is the shortest interval (in minute) the store has gone without purchase and refund?
+
+
+3. For users who ordered at least three times in the store, how much dollar they have
+spent until their third purchase?
+
+
+select A."user id",B."txn_value" from
+(select "user id" from
+(select t1.*,ROW_NUMBER() OVER (PARTITION BY "user id" ORDER BY "purchase time") AS RANK
+     from transaction t1
+ ) T where T.RANK>=3
+ )A 
+ inner join 
+(select "user id",sum(T."Transaction Value") txn_value from
+(select t1.*,ROW_NUMBER() OVER (PARTITION BY "user id" ORDER BY "purchase time") AS RANK
+     from transaction t1
+ ) T where T.RANK<=3
+ group by "user id"
+ )B
+ on A."user id"=B."user id"
+
+Approach: Select all users who did more than 3 transactions and inner join them with the total amount spent by
+the users untill they did 3 transactions (With the 3rd transaction included)
+
+
